@@ -8,7 +8,7 @@ class Net1(nn.Module):
     def __init__(self):
         super(Net1, self).__init__()
         
-        Your model
+        # Your model
 
     def forward(self, x):
         
@@ -132,7 +132,8 @@ class BaseCAM:
         if target_category is None:
             target_category = np.argmax(output.cpu().data.numpy())
         self.model.zero_grad()
-        loss = self.get_loss(output, target_category)
+        loss = self.get_loss(output.squeeze(), target_category)
+        print(output, target_category, loss, sep='\n')
         loss.backward(retain_graph=True)
 
         activations = self.activations_and_grads.activations[-1].cpu().data.numpy()[0, :]
@@ -143,8 +144,8 @@ class BaseCAM:
         for i, w in enumerate(weights):
             cam += w * activations[i, :]
         # cam = activations.T.dot(weights)    #maybe better
-        # print(input_tensor.shape[1])
-        cam = resize_1d(cam, (input_tensor.shape[2]))
+        # print(input_tensor.shape)
+        cam = resize_1d(cam, (input_tensor.shape[1]))
         cam = np.maximum(cam, 0)
         heatmap = (cam - np.min(cam)) / (np.max(cam) - np.min(cam) + 1e-10)
         return heatmap
@@ -156,16 +157,21 @@ class GradCAM(BaseCAM):
                               target_category,
                               activations, grads):
         return np.mean(grads, axis=1)
-model = Net1()
-# model.load_state_dict(torch.load('./data7/parameternn.pt'))
-target_layer = model.p2_6
-net = GradCAM(model, target_layer)
-from settest import Test
-input_tensor = Test.Data[100:101, :]
-input_tensor = torch.tensor(input_tensor, dtype=torch.float32)
-#plt.figure(figsize=(5, 1))
-output = net(input_tensor)
-import scipy.io as scio
-input_tensor = input_tensor.numpy().squeeze()
-dataNew = "G:\\datanew.mat"
-scio.savemat(dataNew, mdict={'cam': output, 'data': input_tensor})
+
+def main():
+    model = Net1()
+    # model.load_state_dict(torch.load('./data7/parameternn.pt'))
+    target_layer = model.p2_6
+    net = GradCAM(model, target_layer)
+    from settest import Test
+    input_tensor = Test.Data[100:101, :]
+    input_tensor = torch.tensor(input_tensor, dtype=torch.float32)
+    #plt.figure(figsize=(5, 1))
+    output = net(input_tensor)
+    import scipy.io as scio
+    input_tensor = input_tensor.numpy().squeeze()
+    dataNew = "G:\\datanew.mat"
+    scio.savemat(dataNew, mdict={'cam': output, 'data': input_tensor})
+
+if __name__ == '__main__':
+    main()
