@@ -159,7 +159,7 @@ class BaseCAM:
         outputs = self.activations_and_grads(input_tensor)
 
         if target_category is None:
-            target_category = torch.argmax(output.cpu().data, dim=0)
+            target_category = torch.argmax(outputs.cpu().data, dim=0)
         targets = [ClassifierOutputTarget(category) for category in target_category]
         self.model.zero_grad()
         # loss = self.get_loss(output, targets)
